@@ -1,6 +1,7 @@
 import { Database as PostgresSchema } from './supabase';
 
 type PostgresTables = PostgresSchema['public']['Tables'];
+type PostgresViews = PostgresSchema['public']['Views'];
 
 // THIS IS THE ONLY THING YOU EDIT
 // <START>
@@ -12,6 +13,17 @@ type TableExtensions = {
       name?: string;
       preset_id?: number;
     };
+  };
+  **/
+};
+type ViewExtensions = {
+  /**
+  my_existing_view_name: {
+	my_json_column_override: {
+	  tel: string;
+	  name?: string;
+	  preset_id?: number;
+	};
   };
   **/
 };
@@ -46,12 +58,26 @@ type NewTables = {
           >
         >
       : PostgresTables[k]['Update'];
+    Relationships: PostgresTables[k]['Relationships'];
+  };
+};
+
+type NewViews = {
+  [k in keyof PostgresViews]: {
+	Row: k extends keyof ViewExtensions
+	  ? TakeDefinitionFromSecond<
+		  PostgresViews[k]['Row'],
+		  ViewExtensions[k]
+		>
+	  : PostgresViews[k]['Row'];
+	Relationships: PostgresViews[k]['Relationships'];
   };
 };
 
 export type Database = {
   public: Omit<PostgresSchema['public'], 'Tables'> & {
     Tables: NewTables;
+    Views: NewViews;
   };
 };
 
@@ -59,5 +85,6 @@ export type TableName = keyof Database['public']['Tables'];
 export type TableRow<T extends TableName> =
   Database['public']['Tables'][T]['Row'];
 
-export type TableView<View extends keyof Database['public']['Views']> =
+export type ViewName = keyof Database['public']['Views'];
+export type ViewRow<View extends ViewName> =
   Database['public']['Views'][View]['Row'];
